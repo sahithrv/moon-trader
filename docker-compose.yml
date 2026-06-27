@@ -1,0 +1,17 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: moon-trader-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: moon
+      POSTGRES_PASSWORD: moonpass
+      POSTGRES_DB: moon_trader
+    ports:
+      - "5432:5432"
+    volumes:
+      - moon_trader_pgdata:/var/lib/postgresql/data
+
+volumes:
+  - moon_trader_pgdata:/var/lib/postgresql/data
+  

@@ -13,5 +13,5 @@ services:
       - moon_trader_pgdata:/var/lib/postgresql/data
 
 volumes:
-  - moon_trader_pgdata:/var/lib/postgresql/data
-  
+  moon_trader_pgdata:
+    driver: local

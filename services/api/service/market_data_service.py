@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from clients.alpaca_market_data import AlpacaMarketDataClient
 from db.models import BarORM, SymbolORM
 
-WATCHLIST = ["SPY", "QQQ", "NVDA", "RDDT", "MSFT", "NVDA", "NBIS", "TSLA"]
+WATCHLIST = ["SPY", "QQQ", "NVDA", "RDDT", "MSFT", "NBIS", "TSLA"]
 
 class MarketDataService:
     def __init__(self, db: Session):
@@ -16,7 +16,7 @@ class MarketDataService:
 
     def backfill_daily_bars(self, symbols: List[str], start, end) -> int:
         normalized_symbols = [symbol.upper() for symbol in symbols]
-        self.ensure_symbols_exist(normalized_symbols)
+        self._ensure_symbols_exist(normalized_symbols)
 
         #finds the row for the symbol in the DB based on what is in normalized_symbols
         symbol_rows = (
@@ -39,7 +39,7 @@ class MarketDataService:
 
         rows = []
 
-        for symbol, bars in barset.data_items():
+        for symbol, bars in barset.data.items():
             symbol_id = symbol_id_by_symbol[symbol]
 
             for bar in bars:
@@ -64,7 +64,7 @@ class MarketDataService:
 
         stmt = stmt.on_conflict_do_update(
             constraint="uq_bars_symbol_timeframe_opened_at_source",
-            set = {
+            set_ = {
                 "open": stmt.excluded.open,
                 "high": stmt.excluded.high,
                 "low": stmt.excluded.low,
@@ -75,7 +75,7 @@ class MarketDataService:
 
         result = self.db.execute(stmt)
         self.db.commit()
-        return result.rowcount or 0
+        return len(rows) or 0
     
 
     # Make sure that symbol actually exists in DB and if not existing - adds them.

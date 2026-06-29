@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 
 from routers.config import router as config_router
+from routers.data import router as data_router
 
 app = FastAPI(
     title = "Moon Trader API",
@@ -16,3 +17,4 @@ def get_version():
     return {"version": "0.1.0"}
 
 app.include_router(config_router)
+app.include_router(data_router)

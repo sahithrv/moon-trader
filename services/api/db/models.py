@@ -52,13 +52,13 @@ class BarORM(Base):
     low: Mapped[Decimal] = mapped_column(Numeric(18, 6), nullable=False)
     close: Mapped[Decimal] = mapped_column(Numeric(18, 6), nullable=False)
     volume: Mapped[int] = mapped_column(Integer, nullable=False)
+    source: Mapped[str] = mapped_column(String(64), nullable=False, default="alpaca")
 
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     symbol: Mapped["SymbolORM"] = relationship(back_populates="bars")
-    
 
     __table_args__ = (
-        UniqueConstraint("symbol_id", "timeframe", "opened_at", name="uq_bars_symbol_timeframe_opened_at"),
+        UniqueConstraint("symbol_id", "timeframe", "opened_at", "source", name="uq_bars_symbol_timeframe_opened_at_source"),
         Index("ix_bars_symbol_timeframe_opened_at", "symbol_id", "timeframe", "opened_at"),
     )
 

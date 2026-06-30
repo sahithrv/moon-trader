@@ -7,7 +7,28 @@ from sqlalchemy.orm import Session
 from clients.alpaca_market_data import AlpacaMarketDataClient
 from db.models import BarORM, SymbolORM
 
-WATCHLIST = ["SPY", "QQQ", "NVDA", "RDDT", "MSFT", "NBIS", "TSLA"]
+WATCHLIST = [
+    "SPY",
+    "QQQ",
+    "AAPL",
+    "MSFT",
+    "NVDA",
+    "AMZN",
+    "GOOGL",
+    "META",
+    "TSLA",
+    "AMD",
+    "NFLX",
+    "AVGO",
+    "ORCL",
+    "CRM",
+    "JPM",
+    "V",
+    "MA",
+    "COST",
+    "RDDT",
+    "NBIS",
+]
 
 class MarketDataService:
     def __init__(self, db: Session):

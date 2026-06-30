@@ -7,7 +7,7 @@ class BackfillRequests(BaseModel):
     symbols: List[str] = Field(default_factory=list) #makes a list for every instance instead of one shared for all instances of class
     timeframe: str = "1Day"
     start: datetime = Field(
-        default_factory=lambda: datetime.now(timezone.utc) - timedelta(days=30)
+        default_factory=lambda: datetime.now(timezone.utc) - timedelta(days=60)
     )
     end: datetime = Field(
         default_factory=lambda: datetime.now(timezone.utc)

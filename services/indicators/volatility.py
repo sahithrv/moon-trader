@@ -1,5 +1,4 @@
-from returns import daily_return
-
+from .returns import daily_return
 
 # Rolling Volatility
 # First get thr daily return - then we compute the rolling standard deviation to get this.

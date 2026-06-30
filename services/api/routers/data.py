@@ -5,7 +5,14 @@ from sqlalchemy.orm import Session
 
 from db.dependency import get_db
 from db.models import BarORM, SymbolORM
-from models.data import BackfillRequests, BackfillResponse, BarResponse
+from models.data import (
+    BackfillRequests,
+    BackfillResponse,
+    BarResponse,
+    IndicatorBarResponse,
+    IndicatorResponse,
+    Timeframe,
+)
 from service.market_data_service import MarketDataService, WATCHLIST
 from services.indicators.engine import calculate_indicators_from_bars
 
@@ -14,7 +21,7 @@ router = APIRouter(prefix="/data", tags=["data"])
 def get_bars_for_symbol(
     db: Session,
     symbol: str,
-    timeframe: str = "1Day",
+    timeframe: Timeframe = "1Day",
     limit: int = 100,
 ) -> List[BarResponse]:
     normalized_symbol = symbol.upper()
@@ -44,6 +51,36 @@ def get_bars_for_symbol(
         for bar, symbol_row in rows
     ]
 
+def build_indicator_response(
+    symbol: str,
+    timeframe: Timeframe,
+    bars: List[BarResponse],
+) -> IndicatorResponse:
+    indicators = calculate_indicators_from_bars(bars)
+
+    return IndicatorResponse(
+        symbol=symbol.upper(),
+        timeframe=timeframe,
+        count=len(bars),
+        bars=[
+            IndicatorBarResponse(
+                timestamp=bar.opened_at,
+                open=bar.open,
+                high=bar.high,
+                low=bar.low,
+                close=bar.close,
+                volume=bar.volume,
+                sma_20=indicators["sma_20"][i],
+                ema_20=indicators["ema_20"][i],
+                rsi_14=indicators["rsi_14"][i],
+                vwap=indicators["vwap"][i],
+                daily_return=indicators["daily_return"][i],
+                volatility_20=indicators["volatility_20"][i],
+            )
+            for i, bar in enumerate(bars)
+        ],
+    )
+
 #backfills and updates the DB
 @router.post("/backfill", response_model=BackfillResponse)
 def backfill_data(
@@ -53,15 +90,16 @@ def backfill_data(
     symbols = payload.symbols or WATCHLIST
     service = MarketDataService(db)
 
-    count = service.backfill_daily_bars(
+    count = service.backfill_bars(
         symbols=symbols,
         start=payload.start,
         end=payload.end,
+        timeframe=payload.timeframe,
     )
 
     return BackfillResponse(
         symbols=[symbol.upper() for symbol in symbols],
-        timeframe="1Day",
+        timeframe=payload.timeframe,
         inserted_or_updated=count,
         source="alpaca"
     )
@@ -69,8 +107,8 @@ def backfill_data(
 @router.get('/bars/{symbol}', response_model=List[BarResponse])
 def get_bars(
     symbol: str,
-    timeframe: str = Query(default="1Day"),
-    limit: int = Query(default=100),
+    timeframe: Timeframe = Query(default="1Day", description="Bar timeframe: 1Day, 1Hour, 15Min, or 1Min"),
+    limit: int = Query(default=100, ge=1, le=1000),
     db: Session = Depends(get_db)
 ):
     return get_bars_for_symbol(
@@ -80,11 +118,11 @@ def get_bars(
         limit=limit,
     )
 
-@router.get("/indicators/{symbol}")
+@router.get("/indicators/{symbol}", response_model=IndicatorResponse)
 def get_indicators(
     symbol: str,
-    timeframe: str = Query(default="1Day"),
-    limit: int = Query(default=100),
+    timeframe: Timeframe = Query(default="1Day", description="Bar timeframe: 1Day, 1Hour, 15Min, or 1Min"),
+    limit: int = Query(default=100, ge=1, le=1000),
     db: Session = Depends(get_db),
 ):
     bars = get_bars_for_symbol(
@@ -93,4 +131,9 @@ def get_indicators(
         timeframe=timeframe,
         limit=limit,
     )
-    return calculate_indicators_from_bars(list(reversed(bars)))
+    chronological_bars = list(reversed(bars))
+    return build_indicator_response(
+        symbol=symbol,
+        timeframe=timeframe,
+        bars=chronological_bars,
+    )

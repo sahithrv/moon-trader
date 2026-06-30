@@ -35,7 +35,7 @@ class MarketDataService:
         self.db = db
         self.alpaca = AlpacaMarketDataClient()
 
-    def backfill_daily_bars(self, symbols: List[str], start, end) -> int:
+    def backfill_bars(self, symbols: List[str], start, end, timeframe: str = "1Day") -> int:
         normalized_symbols = [symbol.upper() for symbol in symbols]
         self._ensure_symbols_exist(normalized_symbols)
 
@@ -52,10 +52,11 @@ class MarketDataService:
         }
 
         #get bars 
-        barset = self.alpaca.get_daily_bars(
+        barset = self.alpaca.get_bars(
             symbols = normalized_symbols,
             start=start,
             end=end,
+            timeframe=timeframe,
         )
 
         rows = []
@@ -67,7 +68,7 @@ class MarketDataService:
                 rows.append(
                     {
                         "symbol_id": symbol_id,
-                        "timeframe": "1Day",
+                        "timeframe": timeframe,
                         "opened_at": bar.timestamp,
                         "open": Decimal(str(bar.open)),
                         "high": Decimal(str(bar.high)),
@@ -97,6 +98,14 @@ class MarketDataService:
         result = self.db.execute(stmt)
         self.db.commit()
         return len(rows) or 0
+
+    def backfill_daily_bars(self, symbols: List[str], start, end) -> int:
+        return self.backfill_bars(
+            symbols=symbols,
+            start=start,
+            end=end,
+            timeframe="1Day",
+        )
     
 
     # Make sure that symbol actually exists in DB and if not existing - adds them.

@@ -83,6 +83,9 @@ class SignalORM(Base):
     risk_decisions: Mapped[list["RiskDecisionORM"]] = relationship(back_populates="signal")
     orders: Mapped[list["OrderORM"]] = relationship(back_populates="signal")
     llm_memos: Mapped[list["LlmMemoORM"]] = relationship(back_populates="signal")
+    timeframe: Mapped[str] = mapped_column(String(16), nullable=False)
+    reason: Mapped[str] = mapped_column(Text, nullable=False)
+    bar_timestamp: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
     __table_args__ = (
         Index("ix_signals_symbol_created_at", "symbol_id", "created_at"),
